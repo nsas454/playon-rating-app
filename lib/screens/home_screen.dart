@@ -117,13 +117,52 @@ class _GameCard extends StatelessWidget {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 6,
+                runSpacing: 4,
                 children: game.acceptingCategories.map((cat) {
-                  return Chip(
-                    label: Text(cat.name, style: const TextStyle(fontSize: 12)),
-                    backgroundColor: Colors.green.shade50,
-                    side: BorderSide(color: Colors.green.shade200),
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  final count = cat.entryRegistrationCount;
+                  final max = cat.entryMax;
+                  final isFull = max != null && count >= max;
+                  final fillRatio = max != null && max > 0 ? count / max : null;
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isFull ? Colors.red.shade50 : Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isFull ? Colors.red.shade200 : Colors.green.shade200,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(cat.name, style: const TextStyle(fontSize: 12)),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.person,
+                          size: 12,
+                          color: isFull ? Colors.red : Colors.green.shade700,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          max != null ? '$count/$max' : '$count人',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isFull ? Colors.red.shade700 : Colors.green.shade700,
+                          ),
+                        ),
+                        if (isFull) ...[
+                          const SizedBox(width: 4),
+                          Text('満員',
+                              style: TextStyle(fontSize: 10, color: Colors.red.shade700)),
+                        ] else if (fillRatio != null && fillRatio >= 0.8) ...[
+                          const SizedBox(width: 4),
+                          Text('残りわずか',
+                              style: TextStyle(fontSize: 10, color: Colors.orange.shade700)),
+                        ],
+                      ],
+                    ),
                   );
                 }).toList(),
               ),

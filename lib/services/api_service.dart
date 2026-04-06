@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/game.dart';
 import '../models/entry.dart';
 import '../models/rated_player.dart';
@@ -11,7 +12,16 @@ class ApiService {
   static const _storage = FlutterSecureStorage();
 
   // トークン管理
+  // SupabaseセッションのアクセストークンをSecureStorageにキャッシュ
   static Future<String?> getToken() async {
+    // Supabaseのセッションが有効なら自動でリフレッシュされた最新トークンを返す
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      // SecureStorageにも更新しておく
+      await _storage.write(key: tokenKey, value: session.accessToken);
+      return session.accessToken;
+    }
+    // フォールバック: SecureStorageのキャッシュ
     return await _storage.read(key: tokenKey);
   }
 
@@ -21,12 +31,17 @@ class ApiService {
 
   static Future<void> deleteToken() async {
     await _storage.delete(key: tokenKey);
+    await Supabase.instance.client.auth.signOut();
   }
 
   static Future<bool> isLoggedIn() async {
-    final token = await getToken();
+    // Supabaseセッションが有効かどうかを優先確認
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) return true;
+
+    // フォールバック: SecureStorageのJWTを確認
+    final token = await _storage.read(key: tokenKey);
     if (token == null) return false;
-    // JWTのexpを確認
     try {
       final parts = token.split('.');
       if (parts.length != 3) return false;
@@ -78,6 +93,33 @@ class ApiService {
       return Game.fromJson(data);
     }
     throw Exception('大会詳細の取得に失敗しました');
+  }
+
+  // プロフィール更新
+  static Future<RatedPlayer> updateMyRatedPlayer({
+    String? name,
+    String? birthday,
+    String? gender,
+    String? place,
+  }) async {
+    final headers = await _headers(auth: true);
+    final uri = Uri.parse('$baseUrl/v1/my/rated_player/');
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (birthday != null) body['birthday'] = birthday;
+    if (gender != null) body['gender'] = gender;
+    if (place != null) body['place'] = place;
+
+    final response = await http.patch(
+      uri,
+      headers: headers,
+      body: json.encode(body),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      return RatedPlayer.fromJson(data);
+    }
+    throw Exception('プロフィールの更新に失敗しました: ${response.statusCode}');
   }
 
   // マイプロフィール（RatedPlayer）

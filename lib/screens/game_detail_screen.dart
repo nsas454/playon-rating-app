@@ -120,8 +120,7 @@ class _CategoryCard extends StatelessWidget {
                   if (category.entryFee != null)
                     Text('参加費: ¥${category.entryFee}',
                         style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                  Text('エントリー: ${category.entryRegistrationCount}名',
-                      style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                  _EntryCountRow(category: category),
                 ],
               ),
             ),
@@ -136,6 +135,74 @@ class _CategoryCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EntryCountRow extends StatelessWidget {
+  final Category category;
+  const _EntryCountRow({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    final count = category.entryRegistrationCount;
+    final max = category.entryMax;
+    final isFull = max != null && count >= max;
+    final fillRatio = max != null && max > 0 ? count / max : null;
+
+    return Row(
+      children: [
+        Icon(Icons.people, size: 14, color: isFull ? Colors.red : Colors.grey),
+        const SizedBox(width: 4),
+        Text(
+          max != null ? '$count / $max 名' : '$count 名',
+          style: TextStyle(
+            fontSize: 13,
+            color: isFull ? Colors.red.shade700 : Colors.grey.shade700,
+            fontWeight: isFull ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (max != null) ...[
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: fillRatio,
+                backgroundColor: Colors.grey.shade200,
+                color: isFull
+                    ? Colors.red
+                    : fillRatio != null && fillRatio >= 0.8
+                        ? Colors.orange
+                        : Colors.green,
+                minHeight: 6,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+        if (isFull)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.red.shade300),
+            ),
+            child: Text('満員', style: TextStyle(fontSize: 11, color: Colors.red.shade700)),
+          )
+        else if (fillRatio != null && fillRatio >= 0.8)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.orange.shade300),
+            ),
+            child: Text('残りわずか',
+                style: TextStyle(fontSize: 11, color: Colors.orange.shade700)),
+          ),
+      ],
     );
   }
 }
@@ -157,7 +224,32 @@ class _EntryWebViewState extends State<_EntryWebView> {
     super.initState();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse(widget.url));
+      ..setUserAgent(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+        'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+        'Version/17.0 Mobile/15E148 Safari/604.1',
+      );
+    _loadWithAuth();
+  }
+
+  Future<void> _loadWithAuth() async {
+    final token = await ApiService.getToken();
+    final uri = Uri.parse(widget.url);
+
+    if (token != null) {
+      // ページ読み込み前にCookieをセット
+      final cookieManager = WebViewCookieManager();
+      await cookieManager.setCookie(
+        WebViewCookie(
+          name: '__session',
+          value: token,
+          domain: '.playonmatch.com',
+          path: '/',
+        ),
+      );
+    }
+
+    await _controller.loadRequest(uri);
   }
 
   @override

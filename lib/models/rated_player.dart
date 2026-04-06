@@ -3,6 +3,7 @@ class RatedPlayer {
   final String name;
   final String? gender;
   final String? birthday;
+  final String? place;
   final String? placeName;
   final double? rating;
   final double? bestRating;
@@ -16,6 +17,7 @@ class RatedPlayer {
     required this.name,
     this.gender,
     this.birthday,
+    this.place,
     this.placeName,
     this.rating,
     this.bestRating,
@@ -31,6 +33,7 @@ class RatedPlayer {
       name: json['name'] ?? '',
       gender: json['gender'],
       birthday: json['birthday'],
+      place: json['place']?.toString(),
       placeName: json['place_name'],
       rating: (json['rating'] as num?)?.toDouble(),
       bestRating: (json['best_rating'] as num?)?.toDouble(),

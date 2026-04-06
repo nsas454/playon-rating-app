@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/rated_player.dart';
 import '../services/api_service.dart';
+import 'profile_edit_screen.dart';
 
 class MyScreen extends StatefulWidget {
   const MyScreen({super.key});
@@ -69,6 +70,12 @@ class _MyScreenState extends State<MyScreen> {
       appBar: AppBar(
         title: const Text('マイページ'),
         actions: [
+          if (_player != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'プロフィール編集',
+              onPressed: _openEdit,
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
@@ -109,6 +116,17 @@ class _MyScreenState extends State<MyScreen> {
                       ),
                     ),
     );
+  }
+
+  Future<void> _openEdit() async {
+    if (_player == null) return;
+    final updated = await Navigator.push<RatedPlayer>(
+      context,
+      MaterialPageRoute(builder: (_) => ProfileEditScreen(player: _player!)),
+    );
+    if (updated != null) {
+      setState(() => _player = updated);
+    }
   }
 
   Future<void> _logout() async {

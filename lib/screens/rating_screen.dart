@@ -48,10 +48,6 @@ class _RatingScreenState extends State<RatingScreen> {
                       return ListTile(
                         leading: _RankBadge(rank: rank),
                         title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(
-                          '${p.gameCount ?? 0}試合 ${p.winCount ?? 0}勝 ${p.loseCount ?? 0}敗',
-                          style: const TextStyle(fontSize: 12),
-                        ),
                         trailing: Text(
                           p.rating?.toStringAsFixed(0) ?? '-',
                           style: const TextStyle(
