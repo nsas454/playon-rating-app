@@ -73,7 +73,7 @@ class ApiService {
     final headers = <String, String>{'Content-Type': 'application/json'};
     if (token != null) headers['Authorization'] = 'Bearer $token';
 
-    final uri = Uri.parse('$baseUrl/games/?page_size=$pageSize');
+    final uri = Uri.parse('$baseUrl/v1/games/?page_size=$pageSize');
     final response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final data = json.decode(utf8.decode(response.bodyBytes));
@@ -86,7 +86,7 @@ class ApiService {
   // 大会詳細
   static Future<Game> getGame(String slug) async {
     final headers = await _headers(auth: true);
-    final uri = Uri.parse('$baseUrl/games/$slug/');
+    final uri = Uri.parse('$baseUrl/v1/games/$slug/');
     final response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final data = json.decode(utf8.decode(response.bodyBytes));
